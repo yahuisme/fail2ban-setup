@@ -5,6 +5,7 @@
 #
 # 此脚本运行时不会有任何警告或确认提示，并提供
 # 带有颜色的、美化的中文输出界面以提升用户体验。
+# 采用 systemd 后端，以适应绝大多数现代 Linux 发行版。
 # ==============================================================================
 
 set -e
@@ -101,6 +102,7 @@ echo "================================================="
 echo -e "${NC}"
 msg_info "将要保护的端口: ${YELLOW}${PORT_LIST}${NC}"
 msg_info "封禁策略: 5次失败后永久封禁"
+msg_info "日志后端: ${YELLOW}systemd${NC}"
 
 
 # --- 步骤 1: 安装 Fail2ban ---
@@ -137,19 +139,13 @@ ignoreip = 127.0.0.1/8
 enabled = true
 filter = sshd
 port = ${PORT_LIST}
+backend = systemd
 maxretry = 5
 findtime = 300
 bantime = -1
 banaction = iptables-allports
 action = %(action_mwl)s
-logpath = /var/log/auth.log
 EOF
-
-# 为 RHEL/CentOS 系统修正日志路径
-if [ -f /var/log/secure ]; then
-    sudo sed -i 's|logpath = /var/log/auth.log|logpath = /var/log/secure|g' /etc/fail2ban/jail.local
-    msg_info "检测到 RHEL/CentOS 系统，已修正 SSH 日志路径。"
-fi
 msg_ok "配置文件创建成功。"
 
 # --- 步骤 3: 启动并启用服务 ---
